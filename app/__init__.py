@@ -10,8 +10,8 @@ app = Flask(__name__)
 app.config['DB_NAME'] = "crops"
 app.config['DB_USER'] = "postgres"
 app.config['DB_PASSWORD'] = "160320"
-app.config['DB_HOST'] = "localhost"  # Use the IP address of the VM
-app.config['DB_PORT'] = "5432"  # Port for PostgreSQL
+app.config['DB_HOST'] = "localhost"
+app.config['DB_PORT'] = "5432"
 
 # Function to create a database connection
 def get_db_conn():

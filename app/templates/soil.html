@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soil Test Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid black;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    .dropdown-container {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .checkbox-column {
+      display: flex;
+      align-items: center;
+    }
+
+    .dropdown-container label {
+      margin-right: 5px;
+    }
+
+    .data-table-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .dropdown-container button {
+      grid-column: span 2;
+      align-self: center;
+      padding: 10px 20px;
+    }
+
+    canvas {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Soil Test Analysis</h1>
+  <label for="yearSelect">Filter by Year:</label>
+  <select id="yearSelect" onchange="loadData()">
+    <option value="">All</option>
+  </select>
+
+  <div class="dropdown-container">
+    <label>Select Columns to Display:</label>
+    <div id="columnCheckboxes" class="checkbox-container"></div>
+    <button onclick="loadData()">OK</button>
+  </div>
+
+  <div class="data-table-container">
+    <table id="dataTable">
+      <thead>
+        <tr id="tableHeaders">
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="dropdown-container">
+    <label for="yAxisSelect">Select Y-Axis:</label>
+    <select id="yAxisSelect"></select>
+    <button onclick="updateChart()">OK</button>
+  </div>
+
+  <canvas id="soilChart" width="400" height="200"></canvas>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      loadYears();
+      loadColumnOptions();
+      loadData();
+    });
+
+    function loadYears() {
+      const years = [2020, 2021, 2022]; // Replace with actual years from your database
+      const yearSelect = document.getElementById('yearSelect');
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
+    }
+
+    function loadColumnOptions() {
+      fetch('/get_columns')
+        .then(response => response.json())
+        .then(columns => {
+          const columnCheckboxes = document.getElementById('columnCheckboxes');
+          const yAxisSelect = document.getElementById('yAxisSelect');
+          columnCheckboxes.innerHTML = "";
+          yAxisSelect.innerHTML = "";
+
+          columns.forEach((column, index) => {
+            const checkboxLabel = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = column;
+            checkboxLabel.appendChild(checkbox);
+            checkboxLabel.appendChild(document.createTextNode(column));
+
+            const columnDiv = document.createElement('div');
+            columnDiv.classList.add('checkbox-column');
+            columnDiv.appendChild(checkboxLabel);
+            columnCheckboxes.appendChild(columnDiv);
+
+            if (column.toLowerCase() !== 'sampleid') {
+              const option = document.createElement('option');
+              option.value = column;
+              option.textContent = column;
+              yAxisSelect.appendChild(option);
+            }
+          });
+        })
+        .catch(error => console.error('Error fetching columns:', error));
+    }
+
+    function getSelectedColumns() {
+      return Array.from(document.getElementById('columnCheckboxes').querySelectorAll('input:checked')).map(checkbox => checkbox.value);
+    }
+
+    function loadData() {
+      const year = document.getElementById('yearSelect').value;
+      const selectedColumns = getSelectedColumns();
+      let url = '/soil_data';
+      if (year) {
+        url += '?year=' + year;
+      }
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          console.log("Fetched Data: ", data);  // Debugging: Check fetched data
+          populateTable(data, selectedColumns);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    function populateTable(data, selectedColumns) {
+      const tableHeaders = document.getElementById('tableHeaders');
+      tableHeaders.innerHTML = '';
+      selectedColumns.forEach(column => {
+        const th = document.createElement('th');
+        th.textContent = column;
+        tableHeaders.appendChild(th);
+      });
+
+      const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+      data.forEach(row => {
+        const newRow = tableBody.insertRow();
+        selectedColumns.forEach(column => {
+          const newCell = newRow.insertCell();
+          newCell.textContent = row[column.toLowerCase().replace(/ /g, '_')];
+        });
+      });
+    }
+
+    function updateChart() {
+      const yAxis = document.getElementById('yAxisSelect').value;
+      if (!yAxis) return;
+
+      fetch('/soil_data')
+        .then(response => response.json())
+        .then(data => {
+          const scatterData = data.map(row => ({
+            x: row['sampleid'],
+            y: row[yAxis.toLowerCase().replace(/ /g, '_')]
+          }));
+
+          console.log("Scatter Data: ", scatterData);  // Debugging: Check scatter plot data
+
+          const ctx = document.getElementById('soilChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: yAxis,
+                data: scatterData,
+                backgroundColor: 'rgba(75, 192, 192, 1)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                pointRadius: 5
+              }]
+            },
+            options: {
+              scales: {
+                x: {
+                  type: 'category',
+                  title: {
+                    display: true,
+                    text: 'Sample ID'
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: yAxis
+                  }
+                }
+              }
+            }
+          });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Farm of the Future, Data Analytics Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .header {
+      background: #007bff;
+      color: white;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.5em;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 1200px;
+      display: flex;
+      flex-grow: 1;
+    }
+
+    .column {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .left-column {
+      border-right: 1px solid #ddd;
+    }
+
+    .middle-column {
+      border-right: 1px solid #ddd;
+    }
+
+    h2 {
+      color: #555;
+      font-size: 1.5em;
+      text-align: center;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 20px 0;
+      font-size: 1.2em;
+      text-align: left;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+      margin-left: 10px;
+      font-size: 1.2em;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .quick-analysis ul,
+    .upload-files ul {
+      padding-left: 20px;
+    }
+
+    .quick-analysis li,
+    .upload-files li {
+      margin: 15px 0;
+    }
+
+    .upload-section {
+      margin-bottom: 20px;
+    }
+
+    select,
+    input[type="file"],
+    button {
+      display: block;
+      margin-top: 10px;
+    }
+
+    .export-section {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    Farm of the Future, Data Analytics Tool
+  </div>
+  <div class="container">
+    <div class="left-column column">
+      <h2>Table Catalog</h2>
+      <ul>
+        {% for table in tables %}
+        <li>{{ table }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="middle-column column quick-analysis">
+      <h2>Quick Analysis</h2>
+      <ul>
+        <li><a href="{{ url_for('soil') }}">Soil Test Analysis</a></li>
+        <li><a href="{{ url_for('weather') }}">Weather Report Analysis</a></li>
+      </ul>
+    </div>
+    <div class="right-column column upload-files">
+      <h2>Upload Files</h2>
+      <div class="upload-section">
+        <select id="categorySelect">
+          <option value="hexagonGrid">Hexagon Grid</option>
+          <option value="fieldGrid">Field Grid</option>
+          <option value="yieldReports">Yield Reports</option>
+          <option value="cropManagement">Crop Management</option>
+          <option value="weatherReports">Weather Reports</option>
+          <option value="soilTests">Soil Tests</option>
+          <option value="vsecomReports">VSECOM Reports</option>
+          <option value="vphfReports">VPHF Reports</option>
+        </select>
+        <input type="file" id="dataFile" name="dataFile">
+        <button type="submit">Upload</button>
+      </div>
+      <div class="export-section">
+        <h2>Export Table</h2>
+        <form action="{{ url_for('export_table') }}" method="post">
+          <select name="table_name">
+            {% for table in tables %}
+            <option value="{{ table }}">{{ table }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" name="export_path" placeholder="Enter export directory">
+          <button type="submit">Export</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
